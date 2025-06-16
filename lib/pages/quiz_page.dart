@@ -152,8 +152,8 @@ class _QuizPageState extends State<QuizPage> {
         }
       },
       listenFor: const Duration(seconds: 5),
-      pauseFor: const Duration(seconds: 1),
-      localeId: 'en_US',
+      pauseFor: const Duration(seconds: 3),
+      localeId: 'id-ID',
       onSoundLevelChange: (level) {
         print('Sound level: $level');
       },
