@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/quiz_state.dart';
+import 'test_page.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
@@ -34,7 +35,14 @@ class HomePage extends StatelessWidget {
     return ElevatedButton(
       onPressed: () {
         quizState.setLevel(level);
-        Navigator.pushNamed(context, '/quiz');
+        if (level == 1) {
+          Navigator.pushNamed(context, '/quiz');
+        } else {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => SpeechToTextPage()),
+          );
+        }
       },
       style: ElevatedButton.styleFrom(
         padding: const EdgeInsets.symmetric(horizontal: 50, vertical: 20),

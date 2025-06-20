@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/quiz_state.dart';
@@ -126,11 +128,6 @@ class _QuizPageState extends State<QuizPage> {
   }
 
   Future<bool> _checkPronunciation(String expected) async {
-    print(
-      !_speech.isAvailable
-          ? 'Speech recognition not available'
-          : 'Starting speech recognition...',
-    );
     if (!_speech.isAvailable) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Speech recognition not available')),
@@ -140,32 +137,37 @@ class _QuizPageState extends State<QuizPage> {
 
     setState(() => _isListening = true);
 
-    bool isCorrect = false;
+    final completer = Completer<bool>();
+    String recognizedText = "";
+
     await _speech.listen(
       onResult: (result) {
-        print(result);
-        if (result.finalResult && result.recognizedWords.isNotEmpty) {
-          setState(() {
-            _lastWords = result.recognizedWords.toUpperCase();
-            isCorrect = _lastWords.contains(expected);
-          });
+        print('Speech result: ${result.recognizedWords}');
+        if (result.finalResult) {
+          recognizedText = result.recognizedWords.toUpperCase();
+          _lastWords = recognizedText;
+          completer.complete(recognizedText.contains(expected.toUpperCase()));
         }
       },
       listenFor: const Duration(seconds: 5),
       pauseFor: const Duration(seconds: 3),
       localeId: 'id-ID',
+      partialResults: true,
       onSoundLevelChange: (level) {
         print('Sound level: $level');
       },
     );
 
-    // Wait for speech recognition to complete
-    await Future.delayed(const Duration(seconds: 5));
+    final isCorrect = await completer.future.timeout(
+      const Duration(seconds: 6),
+      onTimeout: () {
+        _speech.stop();
+        return false;
+      },
+    );
 
     setState(() => _isListening = false);
     _speech.stop();
-
-    print('Speech recognition stopped. Result: $_lastWords');
     return isCorrect;
   }
 
