@@ -16,6 +16,7 @@ class _QuizPageState extends State<QuizPage> {
   late stt.SpeechToText _speech;
   bool _isListening = false;
   String _lastWords = '';
+  bool _hasSpeechError = false;
 
   @override
   void initState() {
@@ -25,17 +26,21 @@ class _QuizPageState extends State<QuizPage> {
   }
 
   Future<void> _initSpeech() async {
-    bool available = await _speech.initialize(
-      onStatus: (status) => print('Status: $status'),
-      onError: (error) => print('Error: $error'),
-    );
-
-    if (!available) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Speech recognition failed to initialize"),
-        ),
+    try {
+      bool available = await _speech.initialize(
+        onStatus: (status) => print('Status: $status'),
+        onError: (error) {
+          setState(() => _hasSpeechError = true);
+          print('Error: $error');
+        },
       );
+      if (!available) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Speech recognition not available")),
+        );
+      }
+    } catch (e) {
+      print("Speech init error: $e");
     }
 
     setState(() {});
@@ -43,7 +48,6 @@ class _QuizPageState extends State<QuizPage> {
 
   @override
   Widget build(BuildContext context) {
-    // Use Consumer to only rebuild parts that need state updates
     return Consumer<QuizState>(
       builder: (context, quizState, child) {
         final currentAlphabet = _getCurrentAlphabet();
@@ -61,17 +65,17 @@ class _QuizPageState extends State<QuizPage> {
               children: [
                 const Text('Pronounce this letter:'),
                 const SizedBox(height: 30),
-                // Only this part will rebuild when alphabet changes
                 _buildAlphabetDisplay(currentAlphabet),
                 const SizedBox(height: 50),
                 _buildSpeechButton(context, quizState, currentAlphabet),
-                if (_lastWords.isNotEmpty) ...[
-                  const SizedBox(height: 20),
-                  Text(
-                    'You said: $_lastWords',
-                    style: const TextStyle(fontSize: 18),
+                if (_hasSpeechError)
+                  const Padding(
+                    padding: EdgeInsets.only(top: 20),
+                    child: Text(
+                      'Recognition failed. Try again!',
+                      style: TextStyle(color: Colors.red),
+                    ),
                   ),
-                ],
               ],
             ),
           ),
@@ -98,7 +102,14 @@ class _QuizPageState extends State<QuizPage> {
         padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 15),
       ),
       child: _isListening
-          ? const Text('Listening...')
+          ? const Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CircularProgressIndicator(),
+                SizedBox(width: 10),
+                Text('Listening...'),
+              ],
+            )
           : const Text('Start Speaking'),
     );
   }
@@ -116,26 +127,40 @@ class _QuizPageState extends State<QuizPage> {
   }
 
   void _handleSpeechButton(QuizState quizState, String currentAlphabet) async {
-    // Implement your speech recognition logic here
-    final isCorrect = await _checkPronunciation(currentAlphabet);
+    setState(() {
+      _isListening = true;
+      _lastWords = '';
+      _hasSpeechError = false;
+    });
 
-    if (isCorrect) {
-      quizState.incrementScore();
-      _showResultDialog(context, quizState, isCorrect: true);
-    } else {
-      _showResultDialog(context, quizState, isCorrect: false);
+    try {
+      final isCorrect = await _checkPronunciation(currentAlphabet);
+
+      if (isCorrect) {
+        quizState.incrementScore();
+        _showResultDialog(context, quizState, isCorrect: true);
+      } else {
+        _showResultDialog(
+          context,
+          quizState,
+          isCorrect: false,
+          spokenText: _lastWords,
+        );
+      }
+    } catch (e) {
+      setState(() => _hasSpeechError = true);
+    } finally {
+      setState(() => _isListening = false);
     }
   }
 
-  Future<bool> _checkPronunciation(String expected) async {
+  Future<bool> _checkPronunciation(String expectedLetter) async {
     if (!_speech.isAvailable) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Speech recognition not available')),
       );
       return false;
     }
-
-    setState(() => _isListening = true);
 
     final completer = Completer<bool>();
     String recognizedText = "";
@@ -145,43 +170,46 @@ class _QuizPageState extends State<QuizPage> {
         print('Speech result: ${result.recognizedWords}');
         if (result.finalResult) {
           recognizedText = result.recognizedWords.toUpperCase();
-          _lastWords = recognizedText;
-          completer.complete(recognizedText.contains(expected.toUpperCase()));
+          setState(() => _lastWords = recognizedText);
+
+          final expected = expectedLetter.toUpperCase();
+          final isMatch =
+              recognizedText.contains(expected) ||
+              _checkPhoneticMatch(recognizedText, expected);
+          completer.complete(isMatch);
         }
       },
-      listenFor: const Duration(seconds: 5),
-      pauseFor: const Duration(seconds: 3),
+      listenFor: const Duration(seconds: 3),
+      pauseFor: const Duration(seconds: 1),
       localeId: 'id-ID',
-      partialResults: true,
-      onSoundLevelChange: (level) {
-        print('Sound level: $level');
-      },
+      onSoundLevelChange: (level) {},
+      listenOptions: stt.SpeechListenOptions(
+        cancelOnError: true,
+        partialResults: false,
+        listenMode: stt.ListenMode.confirmation,
+      ),
     );
 
-    final isCorrect = await completer.future.timeout(
-      const Duration(seconds: 6),
-      onTimeout: () {
-        _speech.stop();
-        return false;
-      },
+    return await completer.future.timeout(
+      const Duration(seconds: 3),
+      onTimeout: () => false,
     );
-
-    setState(() => _isListening = false);
-    _speech.stop();
-    return isCorrect;
   }
 
   void _showResultDialog(
     BuildContext context,
     QuizState quizState, {
     required bool isCorrect,
+    String spokenText = '',
   }) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: Text(isCorrect ? 'Correct!' : 'Try Again'),
         content: Text(
-          isCorrect ? 'Great pronunciation!' : 'That didn\'t match. Try again.',
+          isCorrect
+              ? 'Great pronunciation!'
+              : 'You said "$spokenText". Try pronouncing "${_getCurrentAlphabet()}" again.',
         ),
         actions: [
           if (isCorrect)
@@ -226,5 +254,46 @@ class _QuizPageState extends State<QuizPage> {
         ],
       ),
     );
+  }
+
+  bool _checkPhoneticMatch(String spoken, String letter) {
+    // Map letters to their phonetic pronunciations
+    final phoneticMap = {
+      'A': ['ey', 'ah'],
+      'B': ['bee', 'be'],
+      'C': ['see', 'ce'],
+      'D': ['dee', 'de'],
+      'E': ['ee', 'eh'],
+      'F': ['ef'],
+      'G': ['jee', 'ge'],
+      'H': ['eych', 'ha'],
+      'I': ['ai', 'ee'],
+      'J': ['jay', 'je'],
+      'K': ['kay', 'ka'],
+      'L': ['el'],
+      'M': ['em'],
+      'N': ['en'],
+      'O': ['oh', 'ow'],
+      'P': ['pee', 'pe'],
+      'Q': ['kyoo', 'kew'],
+      'R': ['ar', 'er'],
+      'S': ['es'],
+      'T': ['tee', 'te'],
+      'U': ['yoo', 'you'],
+      'V': ['vee', 've'],
+      'W': ['double yoo', 'dabelyu'],
+      'X': ['ex', 'eks'],
+      'Y': ['why', 'wai'],
+      'Z': ['zee', 'zed'],
+    };
+
+    final phonetics = phoneticMap[letter] ?? [];
+    return phonetics.any((ph) => spoken.toLowerCase().contains(ph));
+  }
+
+  @override
+  void dispose() {
+    _speech.stop();
+    super.dispose();
   }
 }
