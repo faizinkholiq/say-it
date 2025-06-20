@@ -186,7 +186,7 @@ class _QuizPageState extends State<QuizPage> {
       listenOptions: stt.SpeechListenOptions(
         cancelOnError: true,
         partialResults: false,
-        listenMode: stt.ListenMode.confirmation,
+        listenMode: stt.ListenMode.dictation,
       ),
     );
 
