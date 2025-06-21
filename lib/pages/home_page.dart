@@ -35,14 +35,7 @@ class HomePage extends StatelessWidget {
     return ElevatedButton(
       onPressed: () {
         quizState.setLevel(level);
-        if (level == 1) {
-          Navigator.pushNamed(context, '/quiz');
-        } else {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => SpeechToTextPage()),
-          );
-        }
+        Navigator.pushNamed(context, '/quiz');
       },
       style: ElevatedButton.styleFrom(
         padding: const EdgeInsets.symmetric(horizontal: 50, vertical: 20),

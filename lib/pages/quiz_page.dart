@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ffi';
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -50,7 +51,7 @@ class _QuizPageState extends State<QuizPage> {
   Widget build(BuildContext context) {
     return Consumer<QuizState>(
       builder: (context, quizState, child) {
-        final currentAlphabet = _getCurrentAlphabet();
+        final currentContent = _getCurrentContent();
 
         return Scaffold(
           appBar: AppBar(
@@ -63,11 +64,15 @@ class _QuizPageState extends State<QuizPage> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Text('Pronounce this letter:'),
+                Text(
+                  quizState.currentLevel == 2
+                      ? 'Pronounce this sentence:'
+                      : 'Pronounce this letter 3 times:',
+                ),
                 const SizedBox(height: 30),
-                _buildAlphabetDisplay(currentAlphabet),
+                _buildAlphabetDisplay(currentContent),
                 const SizedBox(height: 50),
-                _buildSpeechButton(context, quizState, currentAlphabet),
+                _buildSpeechButton(context, quizState, currentContent),
                 if (_hasSpeechError)
                   const Padding(
                     padding: EdgeInsets.only(top: 20),
@@ -114,19 +119,29 @@ class _QuizPageState extends State<QuizPage> {
     );
   }
 
-  String _getCurrentAlphabet() {
-    final alphabets = Provider.of<QuizState>(
-      context,
-      listen: false,
-    ).getAlphabetsForLevel();
-    final index = Provider.of<QuizState>(
-      context,
-      listen: false,
-    ).currentQuestionIndex;
-    return alphabets[index];
+  String _getCurrentContent() {
+    final quizState = Provider.of<QuizState>(context, listen: false);
+    if (quizState.currentLevel == 2) {
+      final sentences = [
+        'I eat',
+        'You go',
+        'We play',
+        'She runs',
+        'He jumps',
+        'They sit',
+        'We read',
+        'I sleep',
+        'You walk',
+        'They talk',
+      ];
+      return sentences[quizState.currentQuestionIndex];
+    } else {
+      final alphabets = quizState.getAlphabetsForLevel();
+      return alphabets[quizState.currentQuestionIndex];
+    }
   }
 
-  void _handleSpeechButton(QuizState quizState, String currentAlphabet) async {
+  void _handleSpeechButton(QuizState quizState, String currentContent) async {
     setState(() {
       _isListening = true;
       _lastWords = '';
@@ -134,7 +149,10 @@ class _QuizPageState extends State<QuizPage> {
     });
 
     try {
-      final isCorrect = await _checkPronunciation(currentAlphabet);
+      final isCorrect = await _checkPronunciation(
+        quizState.currentLevel,
+        currentContent,
+      );
 
       if (isCorrect) {
         quizState.incrementScore();
@@ -154,7 +172,7 @@ class _QuizPageState extends State<QuizPage> {
     }
   }
 
-  Future<bool> _checkPronunciation(String expectedLetter) async {
+  Future<bool> _checkPronunciation(int level, String expectedLetter) async {
     if (!_speech.isAvailable) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Speech recognition not available')),
@@ -173,9 +191,12 @@ class _QuizPageState extends State<QuizPage> {
           setState(() => _lastWords = recognizedText);
 
           final expected = expectedLetter.toUpperCase();
-          final isMatch =
-              recognizedText.contains(expected) ||
-              _checkPhoneticMatch(recognizedText, expected);
+          final isMatch = level == 2
+              ? recognizedText.contains(
+                  expected,
+                ) // For sentences, check if recognized text contains the sentence
+              : recognizedText.contains(expected) ||
+                    _checkPhoneticMatch(recognizedText, expected);
           completer.complete(isMatch);
         }
       },
@@ -209,7 +230,7 @@ class _QuizPageState extends State<QuizPage> {
         content: Text(
           isCorrect
               ? 'Great pronunciation!'
-              : 'You said "$spokenText". Try pronouncing "${_getCurrentAlphabet()}" again.',
+              : 'You said "$spokenText". Try pronouncing "${_getCurrentContent()}" again.',
         ),
         actions: [
           if (isCorrect)
@@ -257,7 +278,6 @@ class _QuizPageState extends State<QuizPage> {
   }
 
   bool _checkPhoneticMatch(String spoken, String letter) {
-    // Map letters to their phonetic pronunciations
     final phoneticMap = {
       'A': ['ey', 'ah'],
       'B': ['bee', 'be'],
