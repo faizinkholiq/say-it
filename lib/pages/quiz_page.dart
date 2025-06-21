@@ -179,19 +179,19 @@ class _QuizPageState extends State<QuizPage> {
           completer.complete(isMatch);
         }
       },
-      listenFor: const Duration(seconds: 3),
-      pauseFor: const Duration(seconds: 1),
+      listenFor: const Duration(seconds: 5),
+      pauseFor: const Duration(seconds: 3),
       localeId: 'id-ID',
       onSoundLevelChange: (level) {},
       listenOptions: stt.SpeechListenOptions(
         cancelOnError: true,
-        partialResults: false,
+        partialResults: true,
         listenMode: stt.ListenMode.dictation,
       ),
     );
 
     return await completer.future.timeout(
-      const Duration(seconds: 3),
+      const Duration(seconds: 10),
       onTimeout: () => false,
     );
   }

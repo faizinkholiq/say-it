@@ -53,6 +53,13 @@ class _SpeechToTextPageState extends State<SpeechToTextPage> {
           }),
           listenFor: Duration(minutes: 5),
           pauseFor: Duration(seconds: 3),
+          localeId: 'id-ID',
+          onSoundLevelChange: (level) {},
+          listenOptions: stt.SpeechListenOptions(
+            cancelOnError: true,
+            partialResults: true,
+            listenMode: stt.ListenMode.dictation,
+          ),
         );
       }
     } else {
