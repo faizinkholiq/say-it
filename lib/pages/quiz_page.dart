@@ -168,17 +168,39 @@ class _QuizPageState extends State<QuizPage>
                       isDarkMode,
                     ),
                     const SizedBox(height: 20),
-                    if (_hasSpeechError)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 20),
-                        child: Text(
-                          'Pengenalan gagal. Coba lagi!',
-                          style: TextStyle(
-                            color: Colors.red.shade400,
-                            fontSize: 16,
-                          ),
+                    // if (_hasSpeechError)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 20),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 12,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).colorScheme.errorContainer,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.error_outline,
+                              size: 20,
+                              color: Colors.white,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Pengenalan gagal. Coba lagi',
+                              style: TextStyle(
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.onErrorContainer,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
+                    ),
                   ],
                 ),
               ),
