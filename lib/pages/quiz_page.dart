@@ -292,7 +292,10 @@ class _QuizPageState extends State<QuizPage>
         );
       }
     } catch (e) {
-      setState(() => _hasSpeechError = true);
+      setState(() {
+        _hasSpeechError = true;
+        _isListening = false;
+      });
     } finally {
       _animationController.stop();
       _animationController.value = 1.0;
