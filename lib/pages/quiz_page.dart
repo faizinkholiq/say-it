@@ -527,17 +527,6 @@ class _QuizPageState extends State<QuizPage>
 
   void _showLevelCompleteDialog(BuildContext context, QuizState quizState) {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
-    final score = quizState.score;
-    final message = score >= 8
-        ? 'Luar biasa!'
-        : score >= 5
-        ? 'Bagus!'
-        : 'Tetap semangat!';
-    final icon = score >= 8
-        ? Icons.star
-        : score >= 5
-        ? Icons.thumb_up
-        : Icons.emoji_objects;
 
     showDialog(
       context: context,
@@ -556,58 +545,55 @@ class _QuizPageState extends State<QuizPage>
                   curve: Curves.elasticOut,
                 ),
                 child: Icon(
-                  icon,
+                  Icons.celebration,
                   size: 80,
                   color: Color.fromARGB(255, 26, 188, 156),
                 ),
               ),
               const SizedBox(height: 20),
-
               FadeTransition(
                 opacity: ModalRoute.of(context)!.animation!,
                 child: Text(
-                  'Selamat!',
+                  'Level Selesai!',
                   style: TextStyle(
-                    fontSize: 28,
+                    fontSize: 24,
                     fontWeight: FontWeight.bold,
                     color: Color.fromARGB(255, 26, 188, 156),
                   ),
                 ),
               ),
               const SizedBox(height: 15),
-
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 20,
-                  vertical: 10,
-                ),
-                decoration: BoxDecoration(
-                  color: isDarkMode
-                      ? Colors.blueGrey.shade800
-                      : Colors.teal.shade50,
-                  borderRadius: BorderRadius.circular(50),
-                ),
-                child: Text(
-                  'Skor: $score/10',
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: isDarkMode ? Colors.white : Colors.teal.shade900,
+              Wrap(
+                spacing: 8,
+                children: List.generate(
+                  5,
+                  (index) => ScaleTransition(
+                    scale: CurvedAnimation(
+                      parent: ModalRoute.of(context)!.animation!,
+                      curve: Interval(
+                        0.1 * index,
+                        1.0,
+                        curve: Curves.easeOutBack,
+                      ),
+                    ),
+                    child: Container(
+                      width: 12,
+                      height: 12,
+                      decoration: BoxDecoration(
+                        color: [
+                          Colors.amber,
+                          Colors.teal,
+                          Colors.purple,
+                          Colors.blue,
+                          Colors.green,
+                        ][index % 5],
+                        shape: BoxShape.circle,
+                      ),
+                    ),
                   ),
                 ),
               ),
               const SizedBox(height: 20),
-
-              Text(
-                'Anda menyelesaikan Level ${quizState.currentLevel}',
-                style: TextStyle(
-                  fontSize: 16,
-                  color: isDarkMode ? Colors.white70 : Colors.black87,
-                ),
-              ),
-              const SizedBox(height: 10),
-
-              // Performance message with animation
               SlideTransition(
                 position: Tween<Offset>(begin: Offset(0, 0.5), end: Offset.zero)
                     .animate(
@@ -617,35 +603,38 @@ class _QuizPageState extends State<QuizPage>
                       ),
                     ),
                 child: Text(
-                  message,
+                  'Anda berhasil menyelesaikan\nLevel ${quizState.currentLevel}!',
+                  textAlign: TextAlign.center,
                   style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: isDarkMode
-                        ? Colors.amber.shade200
-                        : Colors.teal.shade700,
+                    fontSize: 18,
+                    color: isDarkMode ? Colors.white70 : Colors.black87,
                   ),
                 ),
               ),
               const SizedBox(height: 30),
-
-              ElevatedButton.icon(
-                icon: Icon(Icons.home, size: 20),
-                label: Text('Kembali ke Beranda'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Color.fromARGB(255, 26, 188, 156),
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(15),
-                  ),
-                  padding: EdgeInsets.symmetric(horizontal: 25, vertical: 12),
-                  elevation: 5,
+              ScaleTransition(
+                scale: CurvedAnimation(
+                  parent: ModalRoute.of(context)!.animation!,
+                  curve: Curves.fastOutSlowIn,
                 ),
-                onPressed: () {
-                  Navigator.popUntil(context, (route) => route.isFirst);
-                  quizState.resetLevel();
-                  _selectedSentences = [];
-                },
+                child: ElevatedButton.icon(
+                  icon: Icon(Icons.home, size: 20),
+                  label: Text('Kembali ke Beranda'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Color.fromARGB(255, 26, 188, 156),
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(15),
+                    ),
+                    padding: EdgeInsets.symmetric(horizontal: 25, vertical: 12),
+                    elevation: 5,
+                  ),
+                  onPressed: () {
+                    Navigator.popUntil(context, (route) => route.isFirst);
+                    quizState.resetLevel();
+                    _selectedSentences = [];
+                  },
+                ),
               ),
             ],
           ),
