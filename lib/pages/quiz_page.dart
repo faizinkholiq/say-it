@@ -1,6 +1,5 @@
 import 'dart:async';
-import 'dart:ffi';
-
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/quiz_state.dart';
@@ -13,17 +12,66 @@ class QuizPage extends StatefulWidget {
   State<QuizPage> createState() => _QuizPageState();
 }
 
-class _QuizPageState extends State<QuizPage> {
+class _QuizPageState extends State<QuizPage>
+    with SingleTickerProviderStateMixin {
   late stt.SpeechToText _speech;
   bool _isListening = false;
   String _lastWords = '';
   bool _hasSpeechError = false;
+  late List<String> _sentences;
+  late List<String> _selectedSentences;
+  late AnimationController _animationController;
+  late Animation<double> _scaleAnimation;
+  double _soundLevel = 0;
+  bool _showHint = false;
 
   @override
   void initState() {
     super.initState();
     _speech = stt.SpeechToText();
     _initSpeech();
+    _initializeSentences();
+
+    _animationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 500),
+    );
+    _scaleAnimation = Tween<double>(begin: 1.0, end: 1.1).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    _speech.stop();
+    super.dispose();
+  }
+
+  void _initializeSentences() {
+    _sentences = [
+      'Saya makan',
+      'Jalan-jalan',
+      'Kita bermain',
+      'Dia berlari',
+      'Dia melompat',
+      'Mereka duduk',
+      'Kita membaca',
+      'Saya tidur',
+      'Kamu berjalan',
+      'Mereka berbicara',
+      'Saya berenang',
+      'Kamu menyanyi',
+      'Kita menari',
+      'Dia menulis',
+      'Dia membaca',
+      'Mereka memasak',
+      'Kita belajar',
+      'Saya bekerja',
+      'Kamu berlari',
+      'Mereka tertawa',
+    ];
+    _selectedSentences = [];
   }
 
   Future<void> _initSpeech() async {
@@ -37,51 +85,115 @@ class _QuizPageState extends State<QuizPage> {
       );
       if (!available) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Speech recognition not available")),
+          const SnackBar(content: Text("Pengenalan suara tidak tersedia")),
         );
       }
     } catch (e) {
       print("Speech init error: $e");
     }
-
     setState(() {});
   }
 
   @override
   Widget build(BuildContext context) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+
     return Consumer<QuizState>(
       builder: (context, quizState, child) {
-        final currentContent = _getCurrentContent();
+        if (quizState.currentLevel == 2 && _selectedSentences.isEmpty) {
+          _selectedSentences = _getRandomSentences();
+        }
+
+        final currentContent = _getCurrentContent(quizState);
 
         return Scaffold(
           appBar: AppBar(
-            title: Text(
-              'Level ${quizState.currentLevel} - '
-              'Question ${quizState.currentQuestionIndex + 1}/10',
+            leading: IconButton(
+              icon: Icon(
+                Icons.arrow_back,
+                color: isDarkMode ? Colors.white : Colors.black,
+              ),
+              onPressed: () => Navigator.pop(context),
             ),
+            title: Text(
+              'Level ${quizState.currentLevel} - Pertanyaan ${quizState.currentQuestionIndex + 1}/10',
+              style: TextStyle(color: isDarkMode ? Colors.white : Colors.black),
+            ),
+            backgroundColor: Color.fromARGB(255, 52, 73, 94),
+            elevation: 0,
           ),
-          body: Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  quizState.currentLevel == 2
-                      ? 'Pronounce this sentence:'
-                      : 'Pronounce this letter 3 times:',
-                ),
-                const SizedBox(height: 30),
-                _buildAlphabetDisplay(currentContent),
-                const SizedBox(height: 50),
-                _buildSpeechButton(context, quizState, currentContent),
-                if (_hasSpeechError)
-                  const Padding(
-                    padding: EdgeInsets.only(top: 20),
-                    child: Text(
-                      'Recognition failed. Try again!',
-                      style: TextStyle(color: Colors.red),
+          body: Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: isDarkMode
+                    ? [
+                        Color.fromARGB(255, 52, 73, 94),
+                        Color.fromARGB(255, 52, 73, 94),
+                      ]
+                    : [Colors.white, Colors.teal.shade50],
+              ),
+            ),
+            child: Center(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      quizState.currentLevel == 2
+                          ? 'Ucapkan kalimat ini:'
+                          : 'Ucapkan huruf ini 3 kali:',
+                      style: TextStyle(
+                        fontSize: 20,
+                        color: isDarkMode ? Colors.white70 : Colors.black54,
+                      ),
                     ),
-                  ),
-              ],
+                    ScaleTransition(
+                      scale: _scaleAnimation,
+                      child: _buildContentDisplay(
+                        quizState.currentLevel,
+                        currentContent,
+                        isDarkMode,
+                      ),
+                    ),
+                    if (_showHint && quizState.currentLevel == 2)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 10),
+                        child: Text(
+                          'Tips: Ucapkan dengan jelas dan perlahan',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontStyle: FontStyle.italic,
+                            color: isDarkMode
+                                ? Colors.amber.shade200
+                                : Colors.teal.shade700,
+                          ),
+                        ),
+                      ),
+                    const SizedBox(height: 30),
+                    _buildSpeechButton(
+                      context,
+                      quizState,
+                      currentContent,
+                      isDarkMode,
+                    ),
+                    const SizedBox(height: 20),
+                    if (_hasSpeechError)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 20),
+                        child: Text(
+                          'Pengenalan gagal. Coba lagi!',
+                          style: TextStyle(
+                            color: Colors.red.shade400,
+                            fontSize: 16,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
             ),
           ),
         );
@@ -89,54 +201,78 @@ class _QuizPageState extends State<QuizPage> {
     );
   }
 
-  Widget _buildAlphabetDisplay(String alphabet) {
-    return Text(
-      alphabet,
-      style: const TextStyle(fontSize: 100, fontWeight: FontWeight.bold),
+  List<String> _getRandomSentences() {
+    final random = Random();
+    List<String> shuffled = List.from(_sentences);
+    shuffled.shuffle(random);
+    return shuffled.take(10).toList();
+  }
+
+  Widget _buildContentDisplay(int level, String content, bool isDarkMode) {
+    return Container(
+      child: Text(
+        content,
+        textAlign: TextAlign.center,
+        style: TextStyle(
+          fontSize: level == 2 ? 45 : 80,
+          fontWeight: FontWeight.bold,
+          color: isDarkMode ? Colors.white : Colors.teal,
+        ),
+      ),
     );
   }
 
   Widget _buildSpeechButton(
     BuildContext context,
     QuizState quizState,
-    String currentAlphabet,
+    String currentContent,
+    bool isDarkMode,
   ) {
     return ElevatedButton(
-      onPressed: () => _handleSpeechButton(quizState, currentAlphabet),
+      onPressed: () => _handleSpeechButton(quizState, currentContent),
       style: ElevatedButton.styleFrom(
-        padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 15),
+        padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 20),
+        backgroundColor: isDarkMode
+            ? Color.fromARGB(255, 26, 188, 156)
+            : Colors.teal.shade400,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+        elevation: 5,
+        shadowColor: isDarkMode
+            ? Colors.teal.shade200.withOpacity(0.5)
+            : Colors.teal.shade200,
       ),
       child: _isListening
-          ? const Row(
+          ? Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                CircularProgressIndicator(),
-                SizedBox(width: 10),
-                Text('Listening...'),
+                Icon(Icons.mic, color: Colors.white),
+                const SizedBox(width: 10),
+                Text(
+                  'Mendengarkan...',
+                  style: TextStyle(
+                    fontSize: 18,
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
               ],
             )
-          : const Text('Start Speaking'),
+          : Text(
+              'Mulai Berbicara',
+              style: TextStyle(
+                fontSize: 18,
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
     );
   }
 
-  String _getCurrentContent() {
-    final quizState = Provider.of<QuizState>(context, listen: false);
+  String _getCurrentContent(QuizState quizState) {
     if (quizState.currentLevel == 2) {
-      final sentences = [
-        'I eat',
-        'You go',
-        'We play',
-        'She runs',
-        'He jumps',
-        'They sit',
-        'We read',
-        'I sleep',
-        'You walk',
-        'They talk',
-      ];
-      return sentences[quizState.currentQuestionIndex];
+      return _selectedSentences[quizState.currentQuestionIndex];
     } else {
-      final alphabets = quizState.getAlphabetsForLevel();
+      final alphabets = quizState.getAlphabets();
       return alphabets[quizState.currentQuestionIndex];
     }
   }
@@ -147,6 +283,8 @@ class _QuizPageState extends State<QuizPage> {
       _lastWords = '';
       _hasSpeechError = false;
     });
+
+    _animationController.repeat(reverse: true);
 
     try {
       final isCorrect = await _checkPronunciation(
@@ -168,6 +306,8 @@ class _QuizPageState extends State<QuizPage> {
     } catch (e) {
       setState(() => _hasSpeechError = true);
     } finally {
+      _animationController.stop();
+      _animationController.value = 1.0;
       setState(() => _isListening = false);
     }
   }
@@ -175,7 +315,7 @@ class _QuizPageState extends State<QuizPage> {
   Future<bool> _checkPronunciation(int level, String expectedLetter) async {
     if (!_speech.isAvailable) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Speech recognition not available')),
+        const SnackBar(content: Text('Pengenalan suara tidak tersedia')),
       );
       return false;
     }
@@ -192,9 +332,7 @@ class _QuizPageState extends State<QuizPage> {
 
           final expected = expectedLetter.toUpperCase();
           final isMatch = level == 2
-              ? recognizedText.contains(
-                  expected,
-                ) // For sentences, check if recognized text contains the sentence
+              ? recognizedText.contains(expected)
               : recognizedText.contains(expected) ||
                     _checkPhoneticMatch(recognizedText, expected);
           completer.complete(isMatch);
@@ -203,7 +341,11 @@ class _QuizPageState extends State<QuizPage> {
       listenFor: const Duration(seconds: 5),
       pauseFor: const Duration(seconds: 3),
       localeId: 'id-ID',
-      onSoundLevelChange: (level) {},
+      onSoundLevelChange: (level) {
+        setState(() {
+          _soundLevel = (level ?? 0) / 100;
+        });
+      },
       listenOptions: stt.SpeechListenOptions(
         cancelOnError: true,
         partialResults: true,
@@ -223,14 +365,26 @@ class _QuizPageState extends State<QuizPage> {
     required bool isCorrect,
     String spokenText = '',
   }) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text(isCorrect ? 'Correct!' : 'Try Again'),
+        backgroundColor: isDarkMode ? Colors.grey.shade900 : Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Text(
+          isCorrect ? 'Benar!' : 'Coba Lagi',
+          style: TextStyle(
+            color: isCorrect
+                ? Color.fromARGB(255, 26, 188, 156)
+                : Colors.orange.shade400,
+          ),
+        ),
         content: Text(
           isCorrect
-              ? 'Great pronunciation!'
-              : 'You said "$spokenText". Try pronouncing "${_getCurrentContent()}" again.',
+              ? 'Pengucapan Anda bagus!'
+              : 'Anda mengucapkan "$spokenText". Coba ucapkan "${_getCurrentContent(quizState)}" lagi.',
+          style: TextStyle(color: isDarkMode ? Colors.white70 : Colors.black87),
         ),
         actions: [
           if (isCorrect)
@@ -240,14 +394,21 @@ class _QuizPageState extends State<QuizPage> {
                 quizState.nextQuestion();
                 if (quizState.isLevelComplete) {
                   _showLevelCompleteDialog(context, quizState);
+                  _selectedSentences = [];
                 }
               },
-              child: const Text('Next'),
+              child: Text(
+                'Lanjut',
+                style: TextStyle(color: Color.fromARGB(255, 26, 188, 156)),
+              ),
             )
           else
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('Try Again'),
+              child: Text(
+                'Coba Lagi',
+                style: TextStyle(color: Colors.orange.shade400),
+              ),
             ),
         ],
       ),
@@ -255,22 +416,58 @@ class _QuizPageState extends State<QuizPage> {
   }
 
   void _showLevelCompleteDialog(BuildContext context, QuizState quizState) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final score = quizState.score;
+    final message = score >= 8
+        ? 'Luar biasa!'
+        : score >= 5
+        ? 'Bagus!'
+        : 'Tetap semangat!';
+
     showDialog(
       context: context,
       barrierDismissible: false,
       builder: (context) => AlertDialog(
-        title: const Text('Congratulations!'),
-        content: Text(
-          'You completed Level ${quizState.currentLevel} '
-          'with ${quizState.score}/10 correct!',
+        backgroundColor: isDarkMode ? Colors.grey.shade900 : Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Text(
+          'Selamat!',
+          style: TextStyle(color: Color.fromARGB(255, 26, 188, 156)),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'Anda menyelesaikan Level ${quizState.currentLevel} '
+              'dengan nilai $score/10!',
+              style: TextStyle(
+                color: isDarkMode ? Colors.white70 : Colors.black87,
+              ),
+            ),
+            const SizedBox(height: 10),
+            Text(
+              message,
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: isDarkMode
+                    ? Colors.amber.shade200
+                    : Colors.teal.shade700,
+              ),
+            ),
+          ],
         ),
         actions: [
           TextButton(
             onPressed: () {
               Navigator.popUntil(context, (route) => route.isFirst);
               quizState.resetLevel();
+              _selectedSentences = [];
             },
-            child: const Text('Back to Home'),
+            child: Text(
+              'Kembali ke Beranda',
+              style: TextStyle(color: Color.fromARGB(255, 26, 188, 156)),
+            ),
           ),
         ],
       ),
@@ -309,11 +506,5 @@ class _QuizPageState extends State<QuizPage> {
 
     final phonetics = phoneticMap[letter] ?? [];
     return phonetics.any((ph) => spoken.toLowerCase().contains(ph));
-  }
-
-  @override
-  void dispose() {
-    _speech.stop();
-    super.dispose();
   }
 }

@@ -11,7 +11,7 @@ class QuizState with ChangeNotifier {
   int get score => _score;
   bool get isLevelComplete => _isLevelComplete;
 
-  List<String> getAlphabetsForLevel() {
+  List<String> getAlphabets() {
     return List.generate(26, (index) => String.fromCharCode(65 + index));
   }
 
