@@ -349,51 +349,175 @@ class _QuizPageState extends State<QuizPage>
     String spokenText = '',
   }) {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final content = _getCurrentContent(quizState);
 
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (context) => Dialog(
         backgroundColor: isDarkMode ? Colors.grey.shade900 : Colors.white,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text(
-          isCorrect ? 'Benar!' : 'Coba Lagi',
-          style: TextStyle(
-            color: isCorrect
-                ? Color.fromARGB(255, 26, 188, 156)
-                : Colors.orange.shade400,
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              AnimatedSwitcher(
+                duration: Duration(milliseconds: 300),
+                child: isCorrect
+                    ? Icon(
+                        Icons.check_circle,
+                        color: Color.fromARGB(255, 26, 188, 156),
+                        size: 80,
+                        key: ValueKey('correct'),
+                      )
+                    : Icon(
+                        Icons.error_outline,
+                        color: Colors.orange.shade400,
+                        size: 80,
+                        key: ValueKey('incorrect'),
+                      ),
+              ),
+              const SizedBox(height: 20),
+
+              ScaleTransition(
+                scale: CurvedAnimation(
+                  parent: ModalRoute.of(context)!.animation!,
+                  curve: Curves.elasticOut,
+                ),
+                child: Text(
+                  isCorrect ? 'Benar!' : 'Coba Lagi',
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: isCorrect
+                        ? Color.fromARGB(255, 26, 188, 156)
+                        : Colors.orange.shade400,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 15),
+
+              FadeTransition(
+                opacity: CurvedAnimation(
+                  parent: ModalRoute.of(context)!.animation!,
+                  curve: Curves.easeIn,
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 10),
+                  child: Column(
+                    children: [
+                      Text(
+                        isCorrect
+                            ? 'Pengucapan Anda bagus!'
+                            : 'Anda mengucapkan:',
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: isDarkMode ? Colors.white70 : Colors.black87,
+                        ),
+                      ),
+                      if (!isCorrect) ...[
+                        const SizedBox(height: 8),
+                        Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: isDarkMode
+                                ? Colors.grey.shade800
+                                : Colors.grey.shade200,
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Text(
+                            '"$spokenText"',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontStyle: FontStyle.italic,
+                              color: isDarkMode ? Colors.white : Colors.black,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Coba ucapkan:',
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: isDarkMode ? Colors.white70 : Colors.black87,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: isDarkMode
+                                ? Colors.blueGrey.shade800
+                                : Colors.teal.shade100,
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Text(
+                            '"$content"',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: isDarkMode
+                                  ? Colors.white
+                                  : Colors.teal.shade900,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 25),
+
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  if (isCorrect)
+                    ElevatedButton.icon(
+                      icon: Icon(Icons.arrow_forward, size: 20),
+                      label: Text('Lanjut'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Color.fromARGB(255, 26, 188, 156),
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(15),
+                        ),
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 20,
+                          vertical: 12,
+                        ),
+                      ),
+                      onPressed: () {
+                        Navigator.pop(context);
+                        quizState.nextQuestion();
+                        if (quizState.isLevelComplete) {
+                          _showLevelCompleteDialog(context, quizState);
+                          _selectedSentences = [];
+                        }
+                      },
+                    )
+                  else
+                    ElevatedButton.icon(
+                      icon: Icon(Icons.replay, size: 20),
+                      label: Text('Coba Lagi'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.orange.shade400,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(15),
+                        ),
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 20,
+                          vertical: 12,
+                        ),
+                      ),
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                ],
+              ),
+            ],
           ),
         ),
-        content: Text(
-          isCorrect
-              ? 'Pengucapan Anda bagus!'
-              : 'Anda mengucapkan "$spokenText". Coba ucapkan "${_getCurrentContent(quizState)}" lagi.',
-          style: TextStyle(color: isDarkMode ? Colors.white70 : Colors.black87),
-        ),
-        actions: [
-          if (isCorrect)
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context);
-                quizState.nextQuestion();
-                if (quizState.isLevelComplete) {
-                  _showLevelCompleteDialog(context, quizState);
-                  _selectedSentences = [];
-                }
-              },
-              child: Text(
-                'Lanjut',
-                style: TextStyle(color: Color.fromARGB(255, 26, 188, 156)),
-              ),
-            )
-          else
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: Text(
-                'Coba Lagi',
-                style: TextStyle(color: Colors.orange.shade400),
-              ),
-            ),
-        ],
       ),
     );
   }
@@ -406,52 +530,123 @@ class _QuizPageState extends State<QuizPage>
         : score >= 5
         ? 'Bagus!'
         : 'Tetap semangat!';
+    final icon = score >= 8
+        ? Icons.star
+        : score >= 5
+        ? Icons.thumb_up
+        : Icons.emoji_objects;
 
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => AlertDialog(
+      builder: (context) => Dialog(
         backgroundColor: isDarkMode ? Colors.grey.shade900 : Colors.white,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text(
-          'Selamat!',
-          style: TextStyle(color: Color.fromARGB(255, 26, 188, 156)),
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              'Anda menyelesaikan Level ${quizState.currentLevel} ',
-              style: TextStyle(
-                color: isDarkMode ? Colors.white70 : Colors.black87,
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ScaleTransition(
+                scale: CurvedAnimation(
+                  parent: ModalRoute.of(context)!.animation!,
+                  curve: Curves.elasticOut,
+                ),
+                child: Icon(
+                  icon,
+                  size: 80,
+                  color: Color.fromARGB(255, 26, 188, 156),
+                ),
               ),
-            ),
-            const SizedBox(height: 10),
-            Text(
-              message,
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: isDarkMode
-                    ? Colors.amber.shade200
-                    : Colors.teal.shade700,
+              const SizedBox(height: 20),
+
+              FadeTransition(
+                opacity: ModalRoute.of(context)!.animation!,
+                child: Text(
+                  'Selamat!',
+                  style: TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                    color: Color.fromARGB(255, 26, 188, 156),
+                  ),
+                ),
               ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.popUntil(context, (route) => route.isFirst);
-              quizState.resetLevel();
-              _selectedSentences = [];
-            },
-            child: Text(
-              'Kembali ke Beranda',
-              style: TextStyle(color: Color.fromARGB(255, 26, 188, 156)),
-            ),
+              const SizedBox(height: 15),
+
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 10,
+                ),
+                decoration: BoxDecoration(
+                  color: isDarkMode
+                      ? Colors.blueGrey.shade800
+                      : Colors.teal.shade50,
+                  borderRadius: BorderRadius.circular(50),
+                ),
+                child: Text(
+                  'Skor: $score/10',
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: isDarkMode ? Colors.white : Colors.teal.shade900,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+
+              Text(
+                'Anda menyelesaikan Level ${quizState.currentLevel}',
+                style: TextStyle(
+                  fontSize: 16,
+                  color: isDarkMode ? Colors.white70 : Colors.black87,
+                ),
+              ),
+              const SizedBox(height: 10),
+
+              // Performance message with animation
+              SlideTransition(
+                position: Tween<Offset>(begin: Offset(0, 0.5), end: Offset.zero)
+                    .animate(
+                      CurvedAnimation(
+                        parent: ModalRoute.of(context)!.animation!,
+                        curve: Curves.easeOutBack,
+                      ),
+                    ),
+                child: Text(
+                  message,
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: isDarkMode
+                        ? Colors.amber.shade200
+                        : Colors.teal.shade700,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 30),
+
+              ElevatedButton.icon(
+                icon: Icon(Icons.home, size: 20),
+                label: Text('Kembali ke Beranda'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Color.fromARGB(255, 26, 188, 156),
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(15),
+                  ),
+                  padding: EdgeInsets.symmetric(horizontal: 25, vertical: 12),
+                  elevation: 5,
+                ),
+                onPressed: () {
+                  Navigator.popUntil(context, (route) => route.isFirst);
+                  quizState.resetLevel();
+                  _selectedSentences = [];
+                },
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
