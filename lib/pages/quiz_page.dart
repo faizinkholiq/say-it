@@ -409,34 +409,44 @@ class _QuizPageState extends State<QuizPage>
                   padding: const EdgeInsets.symmetric(horizontal: 10),
                   child: Column(
                     children: [
-                      Text(
-                        isCorrect
-                            ? 'Pengucapan Anda bagus!'
-                            : 'Anda mengucapkan:',
-                        style: TextStyle(
-                          fontSize: 16,
-                          color: isDarkMode ? Colors.white70 : Colors.black87,
-                        ),
-                      ),
-                      if (!isCorrect) ...[
-                        const SizedBox(height: 8),
-                        Container(
-                          padding: const EdgeInsets.all(10),
-                          decoration: BoxDecoration(
-                            color: isDarkMode
-                                ? Colors.grey.shade800
-                                : Colors.grey.shade200,
-                            borderRadius: BorderRadius.circular(10),
+                      if (spokenText == "")
+                        Text(
+                          'Pengucapan Anda kurang jelas',
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: isDarkMode ? Colors.white70 : Colors.black87,
                           ),
-                          child: Text(
-                            '"$spokenText"',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontStyle: FontStyle.italic,
-                              color: isDarkMode ? Colors.white : Colors.black,
+                        )
+                      else ...[
+                        Text(
+                          isCorrect
+                              ? 'Pengucapan Anda bagus!'
+                              : 'Anda mengucapkan:',
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: isDarkMode ? Colors.white70 : Colors.black87,
+                          ),
+                        ),
+                        if (!isCorrect) ...[
+                          const SizedBox(height: 8),
+                          Container(
+                            padding: const EdgeInsets.all(10),
+                            decoration: BoxDecoration(
+                              color: isDarkMode
+                                  ? Colors.grey.shade800
+                                  : Colors.grey.shade200,
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Text(
+                              '"$spokenText"',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontStyle: FontStyle.italic,
+                                color: isDarkMode ? Colors.white : Colors.black,
+                              ),
                             ),
                           ),
-                        ),
+                        ],
                         const SizedBox(height: 8),
                         Text(
                           'Coba ucapkan:',
