@@ -378,179 +378,193 @@ class _QuizPageState extends State<QuizPage>
 
     showDialog(
       context: context,
-      builder: (context) => Dialog(
-        backgroundColor: isDarkMode ? Colors.grey.shade900 : Colors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        child: Padding(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              AnimatedSwitcher(
-                duration: Duration(milliseconds: 300),
-                child: isCorrect
-                    ? Icon(
-                        Icons.check_circle,
-                        color: Color.fromARGB(255, 26, 188, 156),
-                        size: 80,
-                        key: ValueKey('correct'),
-                      )
-                    : Icon(
-                        Icons.error_outline,
-                        color: Colors.orange.shade400,
-                        size: 80,
-                        key: ValueKey('incorrect'),
-                      ),
-              ),
-              const SizedBox(height: 20),
-
-              ScaleTransition(
-                scale: CurvedAnimation(
-                  parent: ModalRoute.of(context)!.animation!,
-                  curve: Curves.elasticOut,
+      barrierDismissible: false,
+      builder: (context) => PopScope(
+        canPop: false,
+        child: Dialog(
+          backgroundColor: isDarkMode ? Colors.grey.shade900 : Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                AnimatedSwitcher(
+                  duration: Duration(milliseconds: 300),
+                  child: isCorrect
+                      ? Icon(
+                          Icons.check_circle,
+                          color: Color.fromARGB(255, 26, 188, 156),
+                          size: 80,
+                          key: ValueKey('correct'),
+                        )
+                      : Icon(
+                          Icons.error_outline,
+                          color: Colors.orange.shade400,
+                          size: 80,
+                          key: ValueKey('incorrect'),
+                        ),
                 ),
-                child: Text(
-                  isCorrect ? 'Benar!' : 'Coba Lagi',
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: isCorrect
-                        ? Color.fromARGB(255, 26, 188, 156)
-                        : Colors.orange.shade400,
+                const SizedBox(height: 20),
+
+                ScaleTransition(
+                  scale: CurvedAnimation(
+                    parent: ModalRoute.of(context)!.animation!,
+                    curve: Curves.elasticOut,
+                  ),
+                  child: Text(
+                    isCorrect ? 'Benar!' : 'Coba Lagi',
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: isCorrect
+                          ? Color.fromARGB(255, 26, 188, 156)
+                          : Colors.orange.shade400,
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(height: 15),
+                const SizedBox(height: 15),
 
-              FadeTransition(
-                opacity: CurvedAnimation(
-                  parent: ModalRoute.of(context)!.animation!,
-                  curve: Curves.easeIn,
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 10),
-                  child: Column(
-                    children: [
-                      if (spokenText == "")
-                        Text(
-                          'Pengucapan Anda kurang jelas',
-                          style: TextStyle(
-                            fontSize: 16,
-                            color: isDarkMode ? Colors.white70 : Colors.black87,
+                FadeTransition(
+                  opacity: CurvedAnimation(
+                    parent: ModalRoute.of(context)!.animation!,
+                    curve: Curves.easeIn,
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 10),
+                    child: Column(
+                      children: [
+                        if (spokenText == "")
+                          Text(
+                            'Pengucapan Anda kurang jelas',
+                            style: TextStyle(
+                              fontSize: 16,
+                              color: isDarkMode
+                                  ? Colors.white70
+                                  : Colors.black87,
+                            ),
+                          )
+                        else ...[
+                          Text(
+                            isCorrect
+                                ? 'Pengucapan Anda bagus!'
+                                : 'Anda mengucapkan:',
+                            style: TextStyle(
+                              fontSize: 16,
+                              color: isDarkMode
+                                  ? Colors.white70
+                                  : Colors.black87,
+                            ),
                           ),
-                        )
-                      else ...[
-                        Text(
-                          isCorrect
-                              ? 'Pengucapan Anda bagus!'
-                              : 'Anda mengucapkan:',
-                          style: TextStyle(
-                            fontSize: 16,
-                            color: isDarkMode ? Colors.white70 : Colors.black87,
+                          if (!isCorrect) ...[
+                            const SizedBox(height: 8),
+                            Container(
+                              padding: const EdgeInsets.all(10),
+                              decoration: BoxDecoration(
+                                color: isDarkMode
+                                    ? Colors.grey.shade800
+                                    : Colors.grey.shade200,
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: Text(
+                                '"$spokenText"',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontStyle: FontStyle.italic,
+                                  color: isDarkMode
+                                      ? Colors.white
+                                      : Colors.black,
+                                ),
+                              ),
+                            ),
+                          ],
+                          const SizedBox(height: 8),
+                          Text(
+                            'Coba ucapkan:',
+                            style: TextStyle(
+                              fontSize: 16,
+                              color: isDarkMode
+                                  ? Colors.white70
+                                  : Colors.black87,
+                            ),
                           ),
-                        ),
-                        if (!isCorrect) ...[
                           const SizedBox(height: 8),
                           Container(
                             padding: const EdgeInsets.all(10),
                             decoration: BoxDecoration(
                               color: isDarkMode
-                                  ? Colors.grey.shade800
-                                  : Colors.grey.shade200,
+                                  ? Colors.blueGrey.shade800
+                                  : Colors.teal.shade100,
                               borderRadius: BorderRadius.circular(10),
                             ),
                             child: Text(
-                              '"$spokenText"',
+                              '"$content"',
                               style: TextStyle(
-                                fontSize: 16,
-                                fontStyle: FontStyle.italic,
-                                color: isDarkMode ? Colors.white : Colors.black,
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: isDarkMode
+                                    ? Colors.white
+                                    : Colors.teal.shade900,
                               ),
                             ),
                           ),
                         ],
-                        const SizedBox(height: 8),
-                        Text(
-                          'Coba ucapkan:',
-                          style: TextStyle(
-                            fontSize: 16,
-                            color: isDarkMode ? Colors.white70 : Colors.black87,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Container(
-                          padding: const EdgeInsets.all(10),
-                          decoration: BoxDecoration(
-                            color: isDarkMode
-                                ? Colors.blueGrey.shade800
-                                : Colors.teal.shade100,
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: Text(
-                            '"$content"',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: isDarkMode
-                                  ? Colors.white
-                                  : Colors.teal.shade900,
-                            ),
-                          ),
-                        ),
                       ],
-                    ],
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(height: 25),
+                const SizedBox(height: 25),
 
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  if (isCorrect)
-                    ElevatedButton.icon(
-                      icon: Icon(Icons.arrow_forward, size: 20),
-                      label: Text('Lanjut'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Color.fromARGB(255, 26, 188, 156),
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(15),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    if (isCorrect)
+                      ElevatedButton.icon(
+                        icon: Icon(Icons.arrow_forward, size: 20),
+                        label: Text('Lanjut'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Color.fromARGB(255, 26, 188, 156),
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(15),
+                          ),
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 20,
+                            vertical: 12,
+                          ),
                         ),
-                        padding: EdgeInsets.symmetric(
-                          horizontal: 20,
-                          vertical: 12,
+                        onPressed: () {
+                          Navigator.pop(context);
+                          quizState.nextQuestion();
+                          if (quizState.isLevelComplete) {
+                            _showLevelCompleteDialog(context, quizState);
+                            _selectedSentences = [];
+                          }
+                        },
+                      )
+                    else
+                      ElevatedButton.icon(
+                        icon: Icon(Icons.replay, size: 20),
+                        label: Text('Coba Lagi'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.orange.shade400,
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(15),
+                          ),
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 20,
+                            vertical: 12,
+                          ),
                         ),
+                        onPressed: () => Navigator.pop(context),
                       ),
-                      onPressed: () {
-                        Navigator.pop(context);
-                        quizState.nextQuestion();
-                        if (quizState.isLevelComplete) {
-                          _showLevelCompleteDialog(context, quizState);
-                          _selectedSentences = [];
-                        }
-                      },
-                    )
-                  else
-                    ElevatedButton.icon(
-                      icon: Icon(Icons.replay, size: 20),
-                      label: Text('Coba Lagi'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.orange.shade400,
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(15),
-                        ),
-                        padding: EdgeInsets.symmetric(
-                          horizontal: 20,
-                          vertical: 12,
-                        ),
-                      ),
-                      onPressed: () => Navigator.pop(context),
-                    ),
-                ],
-              ),
-            ],
+                  ],
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -563,112 +577,123 @@ class _QuizPageState extends State<QuizPage>
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => Dialog(
-        backgroundColor: isDarkMode ? Colors.grey.shade900 : Colors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        child: Padding(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ScaleTransition(
-                scale: CurvedAnimation(
-                  parent: ModalRoute.of(context)!.animation!,
-                  curve: Curves.elasticOut,
-                ),
-                child: Icon(
-                  Icons.celebration,
-                  size: 80,
-                  color: Color.fromARGB(255, 26, 188, 156),
-                ),
-              ),
-              const SizedBox(height: 20),
-              FadeTransition(
-                opacity: ModalRoute.of(context)!.animation!,
-                child: Text(
-                  'Level Selesai!',
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
+      builder: (context) => PopScope(
+        canPop: false,
+        child: Dialog(
+          backgroundColor: isDarkMode ? Colors.grey.shade900 : Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ScaleTransition(
+                  scale: CurvedAnimation(
+                    parent: ModalRoute.of(context)!.animation!,
+                    curve: Curves.elasticOut,
+                  ),
+                  child: Icon(
+                    Icons.celebration,
+                    size: 80,
                     color: Color.fromARGB(255, 26, 188, 156),
                   ),
                 ),
-              ),
-              const SizedBox(height: 15),
-              Wrap(
-                spacing: 8,
-                children: List.generate(
-                  5,
-                  (index) => ScaleTransition(
-                    scale: CurvedAnimation(
-                      parent: ModalRoute.of(context)!.animation!,
-                      curve: Interval(
-                        0.1 * index,
-                        1.0,
-                        curve: Curves.easeOutBack,
-                      ),
-                    ),
-                    child: Container(
-                      width: 12,
-                      height: 12,
-                      decoration: BoxDecoration(
-                        color: [
-                          Colors.amber,
-                          Colors.teal,
-                          Colors.purple,
-                          Colors.blue,
-                          Colors.green,
-                        ][index % 5],
-                        shape: BoxShape.circle,
-                      ),
+                const SizedBox(height: 20),
+                FadeTransition(
+                  opacity: ModalRoute.of(context)!.animation!,
+                  child: Text(
+                    'Level Selesai!',
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: Color.fromARGB(255, 26, 188, 156),
                     ),
                   ),
                 ),
-              ),
-              const SizedBox(height: 20),
-              SlideTransition(
-                position: Tween<Offset>(begin: Offset(0, 0.5), end: Offset.zero)
-                    .animate(
-                      CurvedAnimation(
+                const SizedBox(height: 15),
+                Wrap(
+                  spacing: 8,
+                  children: List.generate(
+                    5,
+                    (index) => ScaleTransition(
+                      scale: CurvedAnimation(
                         parent: ModalRoute.of(context)!.animation!,
-                        curve: Curves.easeOutBack,
+                        curve: Interval(
+                          0.1 * index,
+                          1.0,
+                          curve: Curves.easeOutBack,
+                        ),
+                      ),
+                      child: Container(
+                        width: 12,
+                        height: 12,
+                        decoration: BoxDecoration(
+                          color: [
+                            Colors.amber,
+                            Colors.teal,
+                            Colors.purple,
+                            Colors.blue,
+                            Colors.green,
+                          ][index % 5],
+                          shape: BoxShape.circle,
+                        ),
                       ),
                     ),
-                child: Text(
-                  'Anda berhasil menyelesaikan\nLevel ${quizState.currentLevel}!',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 18,
-                    color: isDarkMode ? Colors.white70 : Colors.black87,
                   ),
                 ),
-              ),
-              const SizedBox(height: 30),
-              ScaleTransition(
-                scale: CurvedAnimation(
-                  parent: ModalRoute.of(context)!.animation!,
-                  curve: Curves.fastOutSlowIn,
-                ),
-                child: ElevatedButton.icon(
-                  icon: Icon(Icons.home, size: 20),
-                  label: Text('Kembali ke Beranda'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Color.fromARGB(255, 26, 188, 156),
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(15),
+                const SizedBox(height: 20),
+                SlideTransition(
+                  position:
+                      Tween<Offset>(
+                        begin: Offset(0, 0.5),
+                        end: Offset.zero,
+                      ).animate(
+                        CurvedAnimation(
+                          parent: ModalRoute.of(context)!.animation!,
+                          curve: Curves.easeOutBack,
+                        ),
+                      ),
+                  child: Text(
+                    'Anda berhasil menyelesaikan\nLevel ${quizState.currentLevel}!',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 18,
+                      color: isDarkMode ? Colors.white70 : Colors.black87,
                     ),
-                    padding: EdgeInsets.symmetric(horizontal: 25, vertical: 12),
-                    elevation: 5,
                   ),
-                  onPressed: () {
-                    Navigator.popUntil(context, (route) => route.isFirst);
-                    quizState.resetLevel();
-                    _selectedSentences = [];
-                  },
                 ),
-              ),
-            ],
+                const SizedBox(height: 30),
+                ScaleTransition(
+                  scale: CurvedAnimation(
+                    parent: ModalRoute.of(context)!.animation!,
+                    curve: Curves.fastOutSlowIn,
+                  ),
+                  child: ElevatedButton.icon(
+                    icon: Icon(Icons.home, size: 20),
+                    label: Text('Kembali ke Beranda'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Color.fromARGB(255, 26, 188, 156),
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(15),
+                      ),
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 25,
+                        vertical: 12,
+                      ),
+                      elevation: 5,
+                    ),
+                    onPressed: () {
+                      Navigator.popUntil(context, (route) => route.isFirst);
+                      quizState.resetLevel();
+                      _selectedSentences = [];
+                    },
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
