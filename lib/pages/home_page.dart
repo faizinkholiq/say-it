@@ -34,7 +34,7 @@ class HomePage extends StatelessWidget {
                   'Say It!',
                   style: TextStyle(
                     fontSize: 48,
-                    fontWeight: FontWeight.bold,
+                    fontWeight: FontWeight.w800,
                     color: Color.fromARGB(255, 26, 188, 156),
                   ),
                 ),
@@ -42,13 +42,13 @@ class HomePage extends StatelessWidget {
                 Text(
                   'Silahkan pilih level',
                   style: TextStyle(
-                    fontSize: 16,
+                    fontSize: 20,
                     color: isDarkMode ? Colors.white70 : Colors.black54,
                   ),
                 ),
                 const SizedBox(height: 40),
                 SizedBox(
-                  width: screenWidth * 0.65,
+                  width: screenWidth * 0.8,
                   child: Column(
                     children: [
                       _buildLevelCard(
@@ -69,7 +69,7 @@ class HomePage extends StatelessWidget {
                     ],
                   ),
                 ),
-                const SizedBox(height: 40),
+                const SizedBox(height: 100),
                 IconButton(
                   icon: Icon(
                     isDarkMode ? Icons.light_mode : Icons.dark_mode,
@@ -125,7 +125,7 @@ class HomePage extends StatelessWidget {
                     Text(
                       'Level $level',
                       style: TextStyle(
-                        fontSize: 18,
+                        fontSize: 24,
                         fontWeight: FontWeight.bold,
                         color: isDarkMode ? Colors.white : Colors.black,
                       ),
@@ -134,7 +134,7 @@ class HomePage extends StatelessWidget {
                     Text(
                       subtitle,
                       style: TextStyle(
-                        fontSize: 14,
+                        fontSize: 18,
                         color: isDarkMode ? Colors.white70 : Colors.black54,
                       ),
                     ),

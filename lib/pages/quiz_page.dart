@@ -22,7 +22,6 @@ class _QuizPageState extends State<QuizPage>
   late List<String> _selectedSentences;
   late AnimationController _animationController;
   late Animation<double> _scaleAnimation;
-  double _soundLevel = 0;
   bool _showHint = false;
 
   @override
@@ -119,7 +118,9 @@ class _QuizPageState extends State<QuizPage>
               'Level ${quizState.currentLevel} - Pertanyaan ${quizState.currentQuestionIndex + 1}/10',
               style: TextStyle(color: isDarkMode ? Colors.white : Colors.black),
             ),
-            backgroundColor: Color.fromARGB(255, 52, 73, 94),
+            backgroundColor: isDarkMode
+                ? Color.fromARGB(255, 52, 73, 94)
+                : Colors.white,
             elevation: 0,
           ),
           body: Container(
@@ -150,6 +151,7 @@ class _QuizPageState extends State<QuizPage>
                         color: isDarkMode ? Colors.white70 : Colors.black54,
                       ),
                     ),
+                    const SizedBox(height: 20),
                     ScaleTransition(
                       scale: _scaleAnimation,
                       child: _buildContentDisplay(
@@ -158,21 +160,7 @@ class _QuizPageState extends State<QuizPage>
                         isDarkMode,
                       ),
                     ),
-                    if (_showHint && quizState.currentLevel == 2)
-                      Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 10),
-                        child: Text(
-                          'Tips: Ucapkan dengan jelas dan perlahan',
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontStyle: FontStyle.italic,
-                            color: isDarkMode
-                                ? Colors.amber.shade200
-                                : Colors.teal.shade700,
-                          ),
-                        ),
-                      ),
-                    const SizedBox(height: 30),
+                    const SizedBox(height: 50),
                     _buildSpeechButton(
                       context,
                       quizState,
@@ -341,11 +329,6 @@ class _QuizPageState extends State<QuizPage>
       listenFor: const Duration(seconds: 5),
       pauseFor: const Duration(seconds: 3),
       localeId: 'id-ID',
-      onSoundLevelChange: (level) {
-        setState(() {
-          _soundLevel = (level ?? 0) / 100;
-        });
-      },
       listenOptions: stt.SpeechListenOptions(
         cancelOnError: true,
         partialResults: true,
@@ -438,8 +421,7 @@ class _QuizPageState extends State<QuizPage>
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              'Anda menyelesaikan Level ${quizState.currentLevel} '
-              'dengan nilai $score/10!',
+              'Anda menyelesaikan Level ${quizState.currentLevel} ',
               style: TextStyle(
                 color: isDarkMode ? Colors.white70 : Colors.black87,
               ),
