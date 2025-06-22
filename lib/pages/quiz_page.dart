@@ -337,7 +337,7 @@ class _QuizPageState extends State<QuizPage>
     );
 
     return await completer.future.timeout(
-      const Duration(seconds: 10),
+      const Duration(seconds: 6),
       onTimeout: () => false,
     );
   }
