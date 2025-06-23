@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/quiz_state.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
+import 'package:logger/logger.dart';
 
 class QuizPage extends StatefulWidget {
   const QuizPage({super.key});
@@ -22,7 +23,7 @@ class _QuizPageState extends State<QuizPage>
   late List<String> _selectedSentences;
   late AnimationController _animationController;
   late Animation<double> _scaleAnimation;
-  bool _showHint = false;
+  final logger = Logger();
 
   @override
   void initState() {
@@ -76,19 +77,18 @@ class _QuizPageState extends State<QuizPage>
   Future<void> _initSpeech() async {
     try {
       bool available = await _speech.initialize(
-        onStatus: (status) => print('Status: $status'),
+        onStatus: (status) => logger.i('Status: $status'),
         onError: (error) {
           setState(() => _hasSpeechError = true);
-          print('Error: $error');
         },
       );
-      if (!available) {
+      if (!available && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text("Pengenalan suara tidak tersedia")),
         );
       }
     } catch (e) {
-      print("Speech init error: $e");
+      logger.e("Speech init error: $e");
     }
     setState(() {});
   }
@@ -219,15 +219,13 @@ class _QuizPageState extends State<QuizPage>
   }
 
   Widget _buildContentDisplay(int level, String content, bool isDarkMode) {
-    return Container(
-      child: Text(
-        content,
-        textAlign: TextAlign.center,
-        style: TextStyle(
-          fontSize: level == 2 ? 45 : 80,
-          fontWeight: FontWeight.bold,
-          color: isDarkMode ? Colors.white : Colors.teal,
-        ),
+    return Text(
+      content,
+      textAlign: TextAlign.center,
+      style: TextStyle(
+        fontSize: level == 2 ? 45 : 80,
+        fontWeight: FontWeight.bold,
+        color: isDarkMode ? Colors.white : Colors.teal,
       ),
     );
   }
@@ -302,6 +300,8 @@ class _QuizPageState extends State<QuizPage>
         currentContent,
       );
 
+      if (!mounted) return;
+
       if (isCorrect) {
         quizState.incrementScore();
         _showResultDialog(context, quizState, isCorrect: true);
@@ -338,7 +338,6 @@ class _QuizPageState extends State<QuizPage>
 
     await _speech.listen(
       onResult: (result) {
-        print('Speech result: ${result.recognizedWords}');
         if (result.finalResult) {
           recognizedText = result.recognizedWords.toUpperCase();
           setState(() => _lastWords = recognizedText);
